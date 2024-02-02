@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cripto Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/sha256.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    
+    <div id="splashScreen">
+        <div id="loading">
+            <p>Carregando...</p>
+            <div id="loadingBar">
+                <div id="loadingPercentage"></div>
+            </div>
+        </div>
+    </div>
+    <div class="container" id="conteudo">
+    <h1>Cripto Wallet</h1>
+
+        <div class="container">
+            <div hidden id="score-display"></div>
+           
+            <div class="graph">
+                <canvas id="myChart"></canvas>
+            </div>
+            <div class="prices">
+                <div hidden id="purchase-price">Preço de Compra: -</div>
+            </div>
+            <div class="actions" hidden>
+                <button class="btn sell">Venda</button>
+                <input type="text" placeholder="Nome do Ativo" required >
+                <button class="btn buy">Compre</button>
+                <div id="current-price">Preço Atual: -</div>
+                <p>BTC - LTC - ETH - COS</p>
+            </div>
+        </div>
+        <div class="container" id="cont-opera">
+            <h3 id="money"></h3>
+        <h2>Operação</h2>
+        <select id="crypto" onchange="updatePrice()">
+            <option value="">Selecione a cripto</option>
+            <option value="btc">BTC</option>
+            <option value="ltc">LTC</option>
+            <option value="eth">ETH</option>
+        </select>
+        <button onclick="updatePrice()" hidden>Atualizar</button>
+        <div>
+            <button onclick="handleTransaction('buy')" class="btn-compra">Comprar</button>
+            <input type="text" id="amount" placeholder="Quantidade">
+            <input type="text" id="price" placeholder="Preço" disabled>
+            <button onclick="handleTransaction('sell')" class="btn-venda">Vender</button>
+            <p id="total"></p>
+        </div>
+    </div>
+
+    
+<div class="container">
+    <div>
+        <h2>Operações de Carteira</h2>
+        <button onclick="getCarteira()">Ver carteira</button>
+        <button onclick="deleteCarteira()">Deletar carteira</button>
+    </div>
+
+    <div id="response"></div>
+    </div>
+    <script src="js/chart.js"></script>
+<script src="js/jquery-3.6.0.min.js"></script>
+<script src="js/grafic.js"></script>
+ 
+
+<div id="overlay"></div>
+<div id="message" class="message-box">
+    <div class="message-header" id="titulo"></div>
+    <div class="message-body" id="message-text"></div>
+    <button class="close-button" onclick="hideMessage()">OK</button>
+</div>
+</div>
+<script>
+    window.addEventListener("load", function () {
+        const loadingPercentage = document.getElementById("loadingPercentage");
+        const splashScreen = document.getElementById("splashScreen");
+        const conteudo = document.getElementById("conteudo");
+
+        let percentage = 0;
+        const interval = setInterval(() => {
+            percentage += 5;
+            loadingPercentage.style.width = `${percentage}%`;
+
+            if (percentage >= 100) {
+                clearInterval(interval);
+                splashScreen.style.display = "none";
+                conteudo.style.display = "block";
+                showMessage()
+            }
+        }, 50);
+    });
+    function showMessage() {
+        let resultado = '';
+        let messageText = document.getElementById("message-text");
+        let messagetitulo = document.getElementById("titulo");
+        if (resultado == '' || resultado == null) {
+            messagetitulo.innerText = "Como Funciona.";
+            messageText.innerText = 'Este sistema é um simulador de corretora de criptomoedas, você recebe um valor ficticio "sem valor para operar a compra ou venda de três das principais criptomoedas, vendo sua evolução, ** todos os dados são simulados e ficticios".';
+        } else {
+            messagetitulo.innerText = "LOGIN.";
+            messageText.innerText = resultado;
+        }
+        var message = document.getElementById("message");
+        var overla = document.getElementById("overlay");
+        message.style.display = "block";
+        overla.style.display = "block";
+
+    }
+
+    function hideMessage() {
+        var overla = document.getElementById("overlay");
+        var message = document.getElementById("message");
+        message.style.display = "none";
+        overla.style.display = "none";
+    }
+        var saldo;
+        const amountInput = document.querySelector('#amount');
+        const totalDisplay = document.querySelector('#total');
+        amountInput.addEventListener('input', function (event) {
+                const amount = event.target.value;
+                const total = amount * document.querySelector('#price').value;;
+                totalDisplay.innerText = `Total: ${total}`;
+            });
+        if (!localStorage.getItem('token')) {
+                const token = sha256(String(new Date().getTime()));
+                localStorage.setItem('token', token);
+                async function iniciaMoney() {
+                const response = await fetch(`cotacoes.php/money`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ money: 13000 , token:token})
+                });
+                const data = await response.json();
+                alert('Bem-vindo ao aplicativo! Você foi inicializado com ' + data.money + ' de dinheiro virtual.');
+            }
+        iniciaMoney();
+        }
+
+        async function updatePrice() {
+            let container = document.getElementById('cont-opera');
+            container.style.border = '2px solid #18f727';
+            const crypto = document.querySelector('#crypto').value;
+            const response = await fetch(`cotacoes.php/quote/${crypto}`, { method: 'GET' });
+            const data = await response.json();
+            document.querySelector('#price').value = data.preco;
+            assetData= {
+            name: data.nome,
+            symbol: data.crypto,
+            lastPrice: data.preco,
+            };
+
+             purchasePrice = assetData.lastPrice;
+            if (!assetData) return;
+
+            if (!chart) {
+                chart = new Chart(canvas, {
+                    type: 'line',
+                    annotation: {
+                        annotations: [{
+                            type: 'line',
+                            mode: 'horizontal',
+                            scaleID: 'y-axis-0',
+                            value: '25',
+                            borderColor: 'red',
+                            borderWidth: 2
+                        }]
+                    },
+                    data: {
+                        labels: [dateToTimeString(new Date())],
+                        datasets: [
+                            {
+                                label: 'Atualização',
+                                data: [assetData.lastPrice],
+                                fill: true,
+                                lineTension: 0.3,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 0, 0, 0.2)',
+                                borderDash: [],
+                                borderDashOffset: 0.3,
+                                borderJoinStyle: 'miter',
+                                pointBorderColor: "green",
+                                pointBackgroundColor: "white",
+                                pointBorderWidth: 1,
+                                pointHoverRadius: 8,
+                                pointHoverBackgroundColor: "brown",
+                                pointHoverBorderColor: "yellow",
+                                pointHoverBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHitRadius: 10,
+                            },
+                        ],
+                    },
+                });
+            } else {
+                chart.data.labels.push(dateToTimeString(new Date()));
+                chart.data.datasets[0].data.push(assetData.lastPrice);
+                chart.update();
+            }
+            currentPrice = assetData.lastPrice;
+            //currentPriceDisplay.textContent = `Preço Atual: $${currentPrice.toFixed(2)}`;
+            //return {
+            //    name: data.nome,
+            //    symbol: data.crypto,
+            //    lastPrice: data.preco,
+            //};
+            
+        }
+            
+        async function handleTransaction(type) {
+                const token = localStorage.getItem('token');
+                const crypto = document.querySelector('#crypto').value;
+                const amount = document.querySelector('#amount').value;
+                const preco = document.querySelector('#price').value;
+                const total = amount * preco;
+                const data = { token, crypto, preco, amount, type };
+
+                const response = await fetch(`cotacoes.php/carteira`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const responseData = await response.json();
+                if (responseData.status== 'success') {
+                    updateMoney(total, type);
+                    loadMoney();
+                    getCarteira();
+                } 
+                else {
+                    document.querySelector('#response').innerText = responseData.message;
+                    let container = document.getElementById('cont-opera');
+                    container.style.border =  '2px solid #fa0404';
+                }
+            }
+
+       async function getCarteira() {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`cotacoes.php/carteira/${token}`, { method: 'GET' });
+            const data = await response.json();
+            let output = '';
+
+            for (let item of data) {
+                output += `Criptomoeda: ${item.crypto}\nPreço médio: ${item.preco}\nQuantidade: ${item.amount}\nTotal: ${item.amount * item.preco}\n\n`;
+            }
+
+            document.querySelector('#response').innerText = output || "Carteira vazia.";
+        }
+
+
+        async function deleteCarteira() {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`cotacoes.php/carteira/${token}`, { method: 'DELETE' });
+            const data = await response.json();
+            document.querySelector('#response').innerText = data.message;
+             loadMoney();
+        }
+        // Chame essa função sempre que uma transação for feita.
+            async function updateMoney(amount, type) {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`cotacoes.php/moneycompra/${token}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, type })
+                });
+                const data = await response.json();
+                document.querySelector('#money').innerText = 'Dinheiro disponível: ' + data.money;
+            }
+
+        async function loadMoney() {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`cotacoes.php/money/${token}`, { method: 'GET'  });
+                const data = await response.json();
+                document.querySelector('#money').innerText = 'Dinheiro disponível: ' + data.money[0].money;
+                saldo= data.money[0].money
+            }
+
+            // Chame essa função quando o aplicativo for iniciado.
+            loadMoney();
+        
+         setInterval(() => {
+               updatePrice();
+            }, 1 * 10 * 1000);
+
+
+
+
+
+    const sellButton = document.querySelector('.sell');
+    const buyButton = document.querySelector('.buy');
+    const assetInput = document.getElementById('crypto');
+    const priceDisplay = document.createElement('div');
+    const graphDiv = document.querySelector('.graph');
+    const canvas = document.getElementById('myChart');
+    const purchasePriceDisplay = document.getElementById('purchase-price');
+    const currentPriceDisplay = document.getElementById('current-price');
+    document.querySelector('.actions').appendChild(priceDisplay);
+    let score = 200; // Adicione a variável score
+    let buttonsDisabled = false;
+    // Adicione um elemento para exibir a pontuação na interface
+    const scoreDisplay = document.getElementById('score-display');
+    scoreDisplay.textContent = `Pontuação: ${score}`;
+
+    let chart;
+    let currentPrice;
+    let userChoice;
+    let purchasePrice;
+    let assetData;
+    let newPrice;
+    let nome;
+    const cryptoArray = [
+        { name: "Bitcoin", symbol: "BTC" },
+        { name: "Ethereum", symbol: "ETH" },
+        { name: "Litecoin", symbol: "LTC" },
+        { name: "Contentos", symbol: "COS" },
+    ];
+
+    function updateCryptoData(symbol) {
+        switch (symbol) {
+            case 'BTC':
+                cryptoArray.forEach((crypto) => {
+                    crypto.lastPrice = getRandomPrice(10000, 60000);
+                });
+                break;
+            case 'LTC':
+                cryptoArray.forEach((crypto) => {
+                    crypto.lastPrice = getRandomPrice(100, 1000);
+                });
+                break;
+            case 'ETH':
+                cryptoArray.forEach((crypto) => {
+                    crypto.lastPrice = getRandomPrice(500, 10000);
+                });
+                break;
+            case 'COS':
+                cryptoArray.forEach((crypto) => {
+                    crypto.lastPrice = getRandomPrice(0.01, 1);
+                });
+                break;
+        }
+
+    }
+
+    function getRandomPrice(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+    function disableButtons(disable) {
+        buttonsDisabled = disable;
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach((button) => {
+            button.disabled = disable;
+
+        });
+    }
+
+    function generateHorizontalLineData(price, numPoints = 9) {
+        const lineData = Array(numPoints).fill(price);
+        return lineData;
+    }
+
+    // async function getAssetData(assetSymbol) {
+    //    const crypto = document.querySelector('#crypto').value;
+    //   const response = await fetch(`cotacoes.php/quote/${crypto}`, { method: 'GET' });
+    //   const data = await response.json();
+
+    //   return {
+    //     name: data.nome,
+    //     symbol: data.crypto,
+    //     lastPrice: data.preco,
+    //   };
+    // }
+
+
+    async function updateChart(assetName) {
+
+        assetData = await updatePrice();
+        console.log(assetData);
+        purchasePrice = assetData.lastPrice;
+        if (!assetData) return;
+
+        if (!chart) {
+            chart = new Chart(canvas, {
+                type: 'line',
+                annotation: {
+                    annotations: [{
+                        type: 'line',
+                        mode: 'horizontal',
+                        scaleID: 'y-axis-0',
+                        value: '25',
+                        borderColor: 'red',
+                        borderWidth: 2
+                    }]
+                },
+                data: {
+                    labels: [dateToTimeString(new Date())],
+                    datasets: [
+                        {
+                            label: assetData.symbol.toUpperCase(),
+                            data: [assetData.lastPrice],
+                            fill: true,
+                            lineTension: 0.3,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 0, 0, 0.2)',
+                            borderDash: [],
+                            borderDashOffset: 0.3,
+                            borderJoinStyle: 'miter',
+                            pointBorderColor: "green",
+                            pointBackgroundColor: "white",
+                            pointBorderWidth: 1,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: "brown",
+                            pointHoverBorderColor: "yellow",
+                            pointHoverBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHitRadius: 10,
+                        },
+                    ],
+                },
+            });
+        } else {
+            chart.data.labels.push(dateToTimeString(new Date()));
+            chart.data.datasets[0].data.push(assetData.lastPrice);
+            chart.update();
+        }
+        currentPrice = assetData.lastPrice;
+        currentPriceDisplay.textContent = `Preço Atual: $${currentPrice.toFixed(2)}`;
+    }
+
+    function setUserChoice(choice) {
+        assetInput.disabled = true;
+        if (buttonsDisabled) return; // Ignora cliques quando os botões estiverem desabilitados
+        disableButtons(true);
+        userChoice = choice;
+        let count = 0;
+        sellButton.classList.toggle('selectered', choice === 'sell');
+        buyButton.classList.toggle('selected', choice === 'buy');
+        // Atualiza o preço de compra/venda
+        purchasePrice = newPrice > 0 ? newPrice : currentPrice;
+        if (choice === 'sell') {
+            purchasePriceDisplay.textContent = `Venda: $${purchasePrice.toFixed(2)}`;
+        } else {
+            purchasePriceDisplay.textContent = `Compra: $${purchasePrice.toFixed(2)}`;
+        }
+        const { futurePoints, futureLabels } = generateFuturePoints(purchasePrice);
+        if (chart.data.datasets.length < 2) {
+            chart.data.datasets.push({
+                label: 'Preço de Compra/Venda',
+                data: futurePoints,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0)',
+                pointBorderColor: "red",
+                pointBackgroundColor: "white",
+                pointBorderWidth: 1,
+                pointHoverRadius: 8,
+                borderDash: [7, 7],
+            });
+        } else {
+            chart.data.datasets[1].data = futurePoints;
+        }
+        // Remove os pontos e labels anteriores
+        chart.data.labels.splice(0, chart.data.labels.length - 1);
+        chart.data.datasets[0].data.splice(0, chart.data.datasets[0].data.length - 1);
+        // Atualiza os labels e os pontos do gráfico
+        chart.data.labels = [dateToTimeString(new Date())].concat(futureLabels);
+        chart.data.datasets[0].data.push(currentPrice);
+        //chart.update();
+        const interval = setInterval(() => {
+            checkResult();
+            count++;
+            sellButton.classList.toggle('selectered', choice === 'sell');
+            buyButton.classList.toggle('selected', choice === 'buy');
+            if (count >= 11) {
+                clearInterval(interval);
+                disableButtons(false);
+                // Atualiza a linha horizontal de preço de compra/venda após o intervalo
+                purchasePrice = currentPrice;
+                const { futurePoints } = generateFuturePoints(purchasePrice);
+                chart.data.datasets[1].data = futurePoints;
+                chart.update();
+            }
+        }, 3000);
+    }
+
+    function generateFuturePoints(currentPrice, numPoints = 13) {
+        const futurePoints = Array(numPoints).fill(currentPrice);
+        const futureLabels = Array(numPoints).fill(0).map((_, index) => {
+            const futureTime = new Date();
+            futureTime.setSeconds(futureTime.getSeconds() + (index + 1) * numPoints); // Adiciona 5 segundos para cada ponto futuro
+            return dateToTimeString(futureTime);
+        });
+
+        return { futurePoints, futureLabels };
+    }
+    function dateToTimeString(date) {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+    }
+    function checkResult() {
+        assetData = getAssetData(nome);
+        newPrice = assetData.lastPrice;
+        chart.data.labels.push(dateToTimeString(new Date()));
+        chart.data.datasets[0].data.push(newPrice);
+        chart.update();
+        const message = document.createElement('div');
+        if ((userChoice === 'buy' && newPrice > purchasePrice) || (userChoice === 'sell' && newPrice < purchasePrice)) {
+            //message.textContent = 'Você ganhou! ';
+            currentPriceDisplay.textContent = `Preço Atual: $${newPrice.toFixed(2)}`;
+            score++; // Incrementa a pontuação do jogador
+            scoreDisplay.textContent = `Pontuação: ${score}`; // Atualiza a pontuação na interface
+            updatePlayerBalance(score, true);
+        } else {
+            //message.textContent = 'Você perdeu. ';
+            currentPriceDisplay.textContent = `Preço Atual: $${newPrice.toFixed(2)}`;
+            score--; // Decrementa a pontuação do jogador
+            scoreDisplay.textContent = `Pontuação: ${score}`;
+            updatePlayerBalance(score, true);
+        }
+        document.body.appendChild(message);
+    }
+    function updatePlayerBalance(newScore, isWinner) {
+        const delta = isWinner ? newScore : -newScore;
+        const apiUrl = 'index.php?action=updateUserBalance'; // Substitua pela URL da rota que você criou
+        const requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `new_balance=${encodeURIComponent(delta)}`,
+        };
+        fetch(apiUrl, requestOptions)
+            .then((response) => response.text())
+            .then((data) => {
+                // console.log('Saldo do jogador atualizado:', data);
+            })
+            .catch((error) => {
+                console.error('Erro ao atualizar o saldo do jogador:', error);
+            });
+    }
+
+    sellButton.addEventListener('click', () => setUserChoice('sell'));
+    buyButton.addEventListener('click', () => setUserChoice('buy'));
+    //assetInput.addEventListener('input', (e) => updateChart(e.target.value));
+
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>

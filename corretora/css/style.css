@@ -1,0 +1,368 @@
+body {
+    font-family: Arial, sans-serif;
+        background-image: url('../img/trade.png');
+        position: relative;
+        height: 100vh;
+        width: 100vw;
+        background-size: cover;
+}
+header {
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+header h1 {
+    margin: 0;
+}
+
+header p {
+    margin: 0;
+}
+
+main {
+    padding-top: 60px;
+    text-align: center;
+}
+
+.graph-container {
+    height: 200px;
+    margin: 20px auto;
+    width: 80%;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+}
+
+.actions-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.actions-container button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+.actions-container button:hover {
+    background-color: #fff;
+    color: #333;
+}
+
+.actions-container input {
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 0 10px;
+}
+
+.selected {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.selectered {
+    background-color: #e81818;
+    color: white;
+}
+
+
+
+
+.container {
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px #ff0000;
+    padding: 20px;
+    width: 70%;
+    margin: 0 auto;
+    text-align: center;
+    background-color: rgba(239, 228, 228, 0.1);
+    backdrop-filter: blur(4px);
+    padding: 20px;
+    color: #fff;
+    text-shadow: 1px 2px #3216bd;
+    border-radius: 10px;
+    border: 2px solid #18f727;
+}
+
+.container::before,
+.container::after {
+    content: '';
+    display: block;
+    position: absolute;
+    width: 90%;
+    height: 70%;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+h1,
+h2 {
+    color: #333;
+}
+
+div {
+    margin-bottom: 20px;
+}
+
+input[type="text"],
+select {
+border-radius: 5px;
+    border: 1px solid #cccccc;
+    padding: 10px;
+    width: 20%;
+    text-align: center;
+    margin-bottom: 20px;
+}
+input:disabled {
+    cursor: default;
+    background-color: -internal-light-dark(rgba(239, 239, 239, 0.3), rgba(59, 59, 59, 0.3));
+    color: white;
+    border-color: rgba(118, 118, 118, 0.3);
+}
+button {
+    padding: 10px 20px;
+    
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-compra {
+background-color: #05d83e;
+    color: white;
+}
+.btn-venda {
+background-color: #de1818;
+    color: white;
+}
+
+#response {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    button {
+        padding: 5px 10px;
+    }
+
+    #response {
+        font-weight: bold;
+        color: #de1818;
+    }
+}
+ #loading {
+     position: absolute;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+     text-align: center;
+    z-index: 9999;
+ }
+
+ #loadingBar {
+     width: 80%;
+     height: 20px;
+     margin: 20px auto;
+     border: 1px solid #ddd;
+     border-radius: 10px;
+     overflow: hidden;
+z-index: 9999;
+background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+ }
+
+ #loadingPercentage {
+     width: 0%;
+     height: 100%;
+     background-color: #0275d8;
+     background-color: rgba(255, 255, 255, 0.8);
+     backdrop-filter: blur(20px);
+    z-index: 9999;
+ }
+
+ .splash-container {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     height: 100vh;
+    z-index: 9999;
+    
+ }
+
+ .message-box {
+     display: none;
+     position: fixed;
+     z-index: 9991;
+     width: 80%;
+     left: 50%;
+     top: 50%;
+     transform: translate(-50%, -50%);
+     background-color: rgba(255, 255, 255, 0.3);
+     backdrop-filter: blur(20px);
+     padding: 20px;
+     max-width: 400px;
+     text-align: center;
+     border-radius: 10px;
+     border: 2px solid #00FFFF;
+    z-index: 9999;
+ }
+
+ .message-box::before,
+ .message-box::after {
+     content: '';
+     display: block;
+     position: absolute;
+     width: 100%;
+     height: 100%;
+     top: 0;
+     left: 0;
+     z-index: -1;
+ }
+
+ .message-box::before {
+     animation: border-glow 2s ease-out infinite;
+     border: 2px solid #0f0;
+     border-radius: 10px;
+     background: linear-gradient(to right, #00FFFF 0%, #00FFFF 50%, transparent 50%);
+     background-size: 200% 100%;
+ }
+
+ @keyframes rotate {
+     100% {
+         transform: rotate(360deg);
+     }
+ }
+
+ @keyframes pulse {
+     0% {
+         box-shadow: 0 0 0 0px rgba(104, 241, 106, 0.5);
+     }
+
+     50% {
+         box-shadow: 0 0 0 20px rgba(104, 241, 106, 0);
+     }
+
+     100% {
+         box-shadow: 0 0 0 0px rgba(104, 241, 106, 0);
+     }
+ }
+
+ .message-box::after {
+     animation: border-glow 2s ease-out infinite;
+     border: 2px solid #0f0;
+     border-radius: 10px;
+     filter: blur(20px);
+     background: linear-gradient(to right, #00FFFF 0%, #00FFFF 50%, transparent 50%);
+     background-size: 200% 100%;
+ }
+
+ @keyframes pulse {
+     0% {
+         box-shadow: 0 0 0 0px rgba(104, 241, 106, 0.4);
+     }
+
+     50% {
+         box-shadow: 0 0 0 20px rgba(104, 241, 106, 0);
+     }
+
+     100% {
+         box-shadow: 0 0 0 0px rgba(104, 241, 106, 0);
+     }
+ }
+
+ @keyframes border-glow {
+     0% {
+         transform: scale(1);
+         opacity: 1;
+     }
+
+     100% {
+         transform: scale(1.5);
+         opacity: 0;
+     }
+
+     /* Gradiente de borda animado */
+     50% {
+         background-position: 0% 30%;
+     }
+ }
+
+
+ .message-header {
+     font-size: 24px;
+     font-weight: bold;
+     margin-bottom: 10px;
+ }
+
+ .message-body {
+     font-size: 18px;
+     margin-bottom: 20px;
+     text-align: left;
+ }
+
+ .close-button {
+     background-color: #4CAF50;
+     color: white;
+     border: none;
+     padding: 10px 20px;
+     text-align: center;
+     text-decoration: none;
+     display: inline-block;
+     font-size: 16px;
+     margin-top: 10px;
+     cursor: pointer;
+     border-radius: 5px;
+ }
+
+ #overlay {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     background-color: rgba(255, 255, 255, 0.1);
+     backdrop-filter: blur(10px);
+     display: none;
+     z-index: 9999;
+ }
