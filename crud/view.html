@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <title>Cadastro Produto</title>
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+		<style>
+			@media screen and (max-width: 600px) {
+			.button-text {
+				display: none;
+			}
+			@media (min-width: 576px) { }
+		}
+		</style>
+	</head>
+    <body>
+		<div class="container">
+			<form action="" id="meuForm">
+				<h1>Cadastro de Produto </h1>
+				<hr>
+				<input type="hidden" name="" id="id" value="">
+				<label>Descrição </label>
+				<input type="text" name="" id="descricao" value="Descrição do produto x" class="form-control">
+				<hr>
+				<label>Preço<br>
+				<input name="" type="text" id="preco" size="60" class="form-control" value="1111" /></label><br />
+				<label>Data Fabricação:<br>
+				<input name="" type="text" id="dataFab" size="40" class="form-control" value="2023-09-01" /></label>
+				<label>Marca:<br>
+				<input name="" type="text" id="marca" size="40" class="form-control" value="Apple" /></label><br />
+				<label>Origem:<br>
+				<select id="origem" class="form-control">
+					<option value="Nacional">Nacional</option>
+					<option value="Importado">Importado</option>
+				</select></label>
+				<label>Fabricante:<br>
+				<input name="ibge" type="text" id="fabricante" size="8" class="form-control" value="Tecent"/></label><br />
+				<br>
+				<button type="button" class="btn btn-danger" onclick="limparCampos()">Limpar</button>
+
+				<button id="btnGrava" type="button" class="btn btn-primary" onclick="grava()">Grava</button>
+
+				<input class="btn btn-primary" type="button" id="btnSalvarAlteracoes" value="Salvar Alterações" onclick="salvarAlteracoes()" hidden>
+
+				<button type="button" class="btn btn-secondary" onclick="lista('0')">Lista Desativados</button>
+
+				<button type="button" class="btn btn-primary" onclick="lista('1')">Lista Ativados</button>
+
+				<button type="button" class="btn btn-success" onclick="lista('2')">Lista Todos</button>
+
+			</form>
+			<div id="produtos">
+
+			<table class="table table-hover">
+				<thead>
+					<tr> 
+						<th scope="col">Id</th>
+						<th scope="col">Descrição</th>
+						<th scope="col">Preço</th>
+						<th scope="col">Data Fabricacao</th>
+						<th scope="col">Fabricante</th>
+						<th scope="col">Marca</th>
+						<th scope="col">Origem</th>
+						<th scope="col">Deletar</th>
+						<th scope="col">Editar</th>
+						<th scope="col">Desativar</th>
+					</tr>
+				</thead>
+				<tbody id="tableData"></tbody>
+			</table>
+
+			</div>
+		</div>
+	<script>
+		function limparCampos() {
+            document.getElementById("meuForm").reset();
+			var campos = document.querySelectorAll("#meuForm input, #meuForm textarea, #meuForm select");
+
+            // Percorre todos os campos e limpa o valor de cada um
+            campos.forEach(function(campo) {
+                campo.value = "";
+            });
+        }
+		
+		function lista(_condicao){
+			$.ajax({
+				method: "POST",
+				url: "Controller.php",
+				data: { 
+					op:'select',
+					condicao:_condicao
+				}
+			})
+			.done(function( response ) {
+				let v = JSON.parse(response);
+				//let v = response;
+				console.log(v);
+				//limpar tabela
+				$("#tableData").children().remove();
+				if(v.length>0){
+					//tab +="";
+					const tabela = document.querySelector('tbody')
+					let tab = "";
+					for (let index = 0; index < v.length; index++) {
+						const element = v[index];
+						const linha = tabela.insertRow();
+						const id = linha.insertCell();
+						const descricao = linha.insertCell();
+						const preco = linha.insertCell();
+						const datafabricacao = linha.insertCell();
+						const fabricante = linha.insertCell();
+						const marca = linha.insertCell();
+						const origem = linha.insertCell();
+						const botaoDeletar = linha.insertCell();
+						const botaoEditar = linha.insertCell();
+						const botaoDesativar = linha.insertCell();
+
+						id.textContent = element.id;
+						descricao.textContent = element.descricao;
+						preco.textContent = element.preco;
+						datafabricacao.textContent = element.datafabricacao;
+						fabricante.textContent = element.fabricante;
+						marca.textContent = element.marca;
+						origem.textContent = element.origem;
+						botaoDeletar.innerHTML = '<button class="btn btn-danger" onclick="deletar('+element.id+')"><i class="fa fa-trash-o"></i><span class="button-text"> Deletar</span></button>';
+						botaoEditar.innerHTML = ' <button class="btn btn-warning" onclick="editar('+element.id+')"><i class="fa fa-edit"></i><span class="button-text"> Editar</span></button>';
+						if(element.ativo==1){
+							botaoDesativar.innerHTML = ' <button class="btn btn-info"  onclick="desativar('+element.id+')"><i class="fa fa fa-toggle-off"></i><span class="button-text"> Desativar</span></button>';
+						}else{
+							botaoDesativar.innerHTML = ' <button class="btn btn-info"  onclick="ativar('+element.id+')"><i class="fa fa fa-toggle-off"></i><span class="button-text"> Ativar</span></button>';
+						}
+					}
+				}
+			});
+		}
+
+		function grava(){
+			var _descricao = document.getElementById('descricao').value;
+			var _preco = document.getElementById('preco').value;
+			var _marca = document.getElementById('marca').value;
+			var _dataFab = document.getElementById('dataFab').value;
+			var _origem = document.getElementById('origem').value;
+			var _fabricante = document.getElementById('fabricante').value;
+
+			$.ajax({
+				method: "POST",
+				url: "Controller.php",
+				data: { 
+					op:'insert',
+					descricao: _descricao,
+					preco: _preco,
+					marca: _marca,
+					dataFab: _dataFab,
+					origem: _origem,
+					fabricante: _fabricante,
+				}
+			})
+			.done(function( response ) {
+				let v = JSON.parse(response);
+				//let v = response;
+				console.log(v);
+				if(v.message=="ok"){
+					//alert('sucesso');
+					Swal.fire({
+						title: 'Sucesso!',
+						text: 'Registro gravado com sucesso',
+						icon: 'success',
+						confirmButtonText: 'Ok'
+					})
+					lista();
+				}else{
+					console.log(response);
+					Swal.fire({
+						title: 'Sucesso!',
+						text: 'Erro na Gravação',
+						icon: 'success',
+						confirmButtonText: 'Ok'
+					})
+				}
+			});
+		}
+
+		function deletar(_id){
+			// Exibe o alerta de confirmação
+            Swal.fire({
+                title: 'Você tem certeza?',
+                text: "Esta ação não pode ser desfeita!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sim, deletar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Aqui você pode chamar a função de deletar
+					$.ajax({
+						method: "POST",
+						url: "Controller.php",
+						data: { 
+							op:'delete',
+							id: _id
+						}
+					})
+					.done(function( response ) {
+						let v = JSON.parse(response);
+						//let v = response;
+						console.log(v);
+						if(v.message=="ok"){
+							//alert('sucesso');
+							Swal.fire({
+								title: 'Sucesso!',
+								text: 'O registro foi deletado',
+								icon: 'success',
+								confirmButtonText: 'Ok'
+							})
+							lista();
+						}else{
+							console.log(response);
+							alert("Erro na Gravação");
+						}
+					});
+                }
+            })
+		}
+		
+		function editar(_id){			
+			$.ajax({
+				method: "POST",
+				url: "Controller.php",
+				data: { 
+					op:'selectById',
+					id: _id,
+				}
+			})
+			.done(function( response ) {
+				let v = JSON.parse(response);
+				//let v = response;
+				//console.log(v[0]);
+				if(v[0].id>0){
+					//alert('sucesso');
+					let dados = v[0];
+					for (let chave in dados) {
+						// Verifica se existe um campo HTML com o mesmo ID da chave
+						let campo = document.getElementById(chave);
+		
+						// Se o campo existir, preenche com o valor correspondente
+						if (campo) {
+							campo.value = dados[chave] !== null ? dados[chave] : ''; // Se o valor for null, define como string vazia
+						}
+					}
+					document.getElementById('btnGrava').disabled=true;
+					document.getElementById('btnSalvarAlteracoes').hidden=false;
+				}else{
+					console.log(response);
+					alert("Erro na Edição");
+				}
+			});
+		}
+
+		function salvarAlteracoes(){
+			var _id = document.getElementById('id').value;
+			var _descricao = document.getElementById('descricao').value;
+			var _preco = document.getElementById('preco').value;
+			var _marca = document.getElementById('marca').value;
+			var _dataFab = document.getElementById('dataFab').value;
+			var _origem = document.getElementById('origem').value;
+			var _fabricante = document.getElementById('fabricante').value;
+
+			$.ajax({
+				method: "POST",
+				url: "Controller.php",
+				data: { 
+					op:'update',
+					id: _id,
+					descricao: _descricao,
+					preco: _preco,
+					marca: _marca,
+					dataFab: _dataFab,
+					origem: _origem,
+					fabricante: _fabricante,
+				}
+			})
+			.done(function( response ) {
+				let v = JSON.parse(response);
+				//let v = response;
+				console.log(v);
+				if(v.message=="ok"){
+					//alert('sucesso');
+					Swal.fire({
+						title: 'Sucesso!',
+						text: 'Registro editado com sucesso',
+						icon: 'success',
+						confirmButtonText: 'Ok'
+					})
+					lista();
+				}else{
+					console.log(response);
+					alert("Erro na Gravação");
+				}
+			});
+		}
+
+		function desativar(_id){
+			// Exibe o alerta de confirmação
+            Swal.fire({
+                title: 'Você tem certeza?',
+                text: "Esta ação não pode ser desfeita!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sim, desativar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Aqui você pode chamar a função de deletar
+					$.ajax({
+						method: "POST",
+						url: "Controller.php",
+						data: { 
+							op:'disable',
+							id: _id
+						}
+					})
+					.done(function( response ) {
+						let v = JSON.parse(response);
+						//let v = response;
+						console.log(v);
+						if(v.message=="ok"){
+							//alert('sucesso');
+							Swal.fire({
+								title: 'Sucesso!',
+								text: 'O registro foi desativado',
+								icon: 'success',
+								confirmButtonText: 'Ok'
+							})
+							lista();
+						}else{
+							console.log(response);
+							alert("Erro na Gravação");
+						}
+					});
+                }
+            })
+		}
+
+		function ativar(_id){
+			// Exibe o alerta de confirmação
+            Swal.fire({
+                title: 'Você tem certeza?',
+                text: "Esta ação não pode ser desfeita!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sim, ativar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Aqui você pode chamar a função de deletar
+					$.ajax({
+						method: "POST",
+						url: "Controller.php",
+						data: { 
+							op:'enable',
+							id: _id
+						}
+					})
+					.done(function( response ) {
+						let v = JSON.parse(response);
+						//let v = response;
+						console.log(v);
+						if(v.message=="ok"){
+							//alert('sucesso');
+							Swal.fire({
+								title: 'Sucesso!',
+								text: 'O registro foi ativado',
+								icon: 'success',
+								confirmButtonText: 'Ok'
+							})
+							lista();
+						}else{
+							console.log(response);
+							alert("Erro na Gravação");
+						}
+					});
+                }
+            })
+		}
+		
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
